@@ -1,14 +1,15 @@
-# MDP Solver Lab
+# Markov Process Solver Lab
 
 ## Overview
 
-This lab focuses on implementing a logic solver that includes converting sentences from BNF (Backus-Naur Form) to CNF (Conjunctive Normal Form) and solving them using the DPLL (Davis-Putnam-Logemann-Loveland) algorithm.
+This lab involves the creation of a generic Markov process solver that computes optimal policies and values for given states using value iteration and policy improvement algorithms. The solver supports both maximization of rewards and minimization of costs, and can handle decision nodes with specified success rates, as well as chance nodes with given transition probabilities.
 
 ## Features
 
-- **BNF to CNF Conversion**: Converts sentences presented in BNF to CNF, making them suitable for processing with SAT solvers.
-- **DPLL Algorithm**: Implements the DPLL algorithm for determining the satisfiability of sentences represented in CNF.
-- **Verbose Mode**: Offers an optional verbose output mode that details each step taken by the DPLL solver, providing insight into the solving process.
+- **Discount Factor**: Supports specifying a discount factor for future rewards or costs.
+- **Maximize Rewards or Minimize Costs**: Can be configured to either maximize rewards or minimize costs based on the flags provided.
+- **Tolerance for Value Iteration**: Allows setting a tolerance level for the convergence of value iteration.
+- **Iteration Cutoff**: Supports specifying a maximum number of iterations for value iteration.
 
 ## Requirements
 
@@ -20,54 +21,56 @@ No specific installation steps are required other than having a Python interpret
 
 ## Usage
 
-Run the program from the command line, specifying the mode of operation and the input file containing the sentences in BNF or CNF.
+To run the program, use the following command format:
 
 ```bash
-python solver.py -mode [cnf|dpll|solver] -v input_file.txt
+python mdp_solver.py -df <discount_factor> [-max] [-tol <tolerance>] [-iter <iterations>] <input_file.txt>
 ```
 
-- `-mode`: Specifies the operation mode. Use `cnf` for BNF to CNF conversion, `dpll` for solving CNF formulas, and `solver` for a full process that converts BNF to CNF and then solves it.
-- `-v`: Optional flag for verbose output from the DPLL solver.
-- `input_file.txt`: Path to the input file containing the sentences.
+- `-df <discount_factor>`: Sets the discount factor for future rewards/costs.
+- `-max`: Specifies that the solver should maximize rewards (default is to minimize costs).
+- `-tol <tolerance>`: Sets the tolerance level for exiting value iteration.
+- `-iter <iterations>`: Specifies a cutoff for the number of iterations in value iteration.
+- `<input_file.txt>`: The path to the input file containing the Markov decision process description.
 
 ## Input File Format
 
-- For BNF to CNF conversion and full process mode (`solver`), the input file should contain sentences in BNF.
-- For DPLL mode, the input file should contain sentences in CNF, where each line represents a separate clause.
+- **Node/State Names**: Should be alphanumeric.
+- **Rewards/Costs**: Lines of the form 'name = value', where value is an integer.
+- **Edges**: Of the form 'name : [e1 e2 e3]', where each `e` is the name of an out-edge from `name`.
+- **Probabilities**: For chance nodes, 'name % p1 p2 p3'; for decision nodes, 'name % p', with success rates and failure distribution as described.
 
-# Example Usage
+## Example Usage
 
 ```bash
-python solver.py -mode cnf bnf_input.txt
-python solver.py -mode dpll cnf_input.txt
-python solver.py -mode dpll -v cnf_input.txt
-python solver.py -mode solver bnf_input.txt
-python solver.py -mode solver -v bnf_input.txt
+python mdp_solver.py -df 0.9 -max -tol 0.001 -iter 100 example_input.txt
 ```
 
 ## Output
 
-- For CNF conversion, the output is the CNF representation of the input formula, printed to the console.
-- For DPLL solving, the output is either the assignment of variables that satisfies the formula or a message indicating that no solution exists.
+The program outputs the optimal policy (for non-chance nodes) and the values of each state under the optimal policy.
 
 ## Implementation Details
 
-The project consists of several key components working together to achieve the transformation and solving of logical expressions:
+he solver implements the algorithm as described, utilizing value iteration to compute state values and greedy policy computation to derive an optimal policy based on the current values. Error handling is included for invalid probability sums and other input inconsistencies.
 
-### BNF to CNF Conversion
+### Value Iteration
 
-- **Parsing BNF**: The input BNF formulas are parsed into an abstract syntax tree (AST) representing the logical structure of the expressions.
-- **CNF Transformation**: Using the AST, the program applies logical equivalences to transform the formula into CNF. This process involves eliminating implications, moving negations inwards (using De Morgan's laws), and distributing ORs over ANDs to achieve the CNF structure.
+Iteratively updates state values based on the Bellman equation, considering the specified discount factor and the transition probabilities derived from the current policy.
 
-### DPLL Solver
+### Greedy Policy Computation
 
-- **Clause Extraction**: From the CNF AST, the solver extracts individual clauses (disjunctions of literals) for processing.
-- **Satisfiability Solving**: The DPLL algorithm is employed to determine the satisfiability of the CNF formula. It iteratively applies simplifications, including finding and propagating pure literals and unit clauses, and makes guesses for unresolved literals, backtracking as necessary.
+Derives a new policy by selecting actions that maximize rewards (or minimize costs) based on the current state values.
+
+### Handling Different Node Types
+
+The solver differentiates between decision nodes and chance nodes, handling them appropriately according to the input file descriptions.
 
 ## Project Structure
 
 The project is structured around modular components for parsing, conversion, and solving, facilitating clear separation of concerns and extendibility. The core modules include:
-- `parser.py`: Parses input formulas into ASTs.
-- `cnf_converter.py`: Transforms ASTs from BNF to CNF.
-- `dpll_solver.py`: Implements the DPLL algorithm on CNF ASTs or clauses.
-- `solver.py`: The main script coordinating the conversion and solving processes based on command-line inputs.
+- `main.py`: The entry point of the program, handling command-line arguments and orchestrating the solving process.
+- `markov_solver.py`: Implements the core logic for the Markov process solver, including value iteration and policy computation.
+- `policy_computation.py`: Dedicated to computing the optimal policy based on the current value estimates.
+- `value_iteration.py`: Contains the implementation of the value iteration algorithm for estimating state values.
+- `utils.py`: Provides utility functions for parsing input files and other miscellaneous tasks.
