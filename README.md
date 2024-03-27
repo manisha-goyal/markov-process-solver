@@ -1,8 +1,8 @@
-# Markov Process Solver Lab
+# Markov Process Solver
 
 ## Overview
 
-This lab involves the creation of a generic Markov process solver that computes optimal policies and values for given states using value iteration and policy improvement algorithms. The solver supports both maximization of rewards and minimization of costs, and can handle decision nodes with specified success rates, as well as chance nodes with given transition probabilities.
+This project involves the creation of a generic Markov process solver that computes optimal policies and values for given states using value iteration and policy improvement algorithms. The solver supports both maximization of rewards and minimization of costs, and can handle decision nodes with specified success rates, as well as chance nodes with given transition probabilities.
 
 ## Features
 
