@@ -1,4 +1,115 @@
-import argparse
+import argparse, sys
+
+class Node:
+    def __init__(self, name):
+        self.name = name
+        self.reward = 0
+        self.value = 0
+        self.edges = [] 
+        self.probabilities = []
+        self.success_rate = None
+        self.is_decision_node = False
+        self.edges_probs = {}
+
+    def set_reward(self, reward):
+        self.reward = reward
+        self.value = reward
+    
+    def set_edges(self, edges):
+        self.edges = edges
+
+    def set_probabilities(self, probabilities):
+        self.probabilities = probabilities
+
+    def set_success_rate(self, success_rate):
+        self.success_rate = success_rate
+
+    def set_node_type(self, type):
+        if type == 'decision':
+            self.is_decision_node = True;
+    
+    def process_probabilities(self):
+        if self.is_terminal() and len(self.probabilities) >= 1:
+            print(f"Error: {self.name} is a terminal node but probability entry is given.")
+            sys.exit()
+
+        if len(self.probabilities) <= 1:
+            success_rate = self.probabilities[0] if len(self.probabilities) == 1 else 1.0
+            failure_rate = (1 - success_rate) / max(len(self.edges) - 1, 1) if len(self.probabilities) == 1 else 0
+            self.set_success_rate(success_rate)
+            self.set_node_type('decision')
+            for edge in self.edges:
+                self.edges_probs[edge] = success_rate if edge == self.edges[0] else failure_rate
+        else:
+            if sum(self.probabilities) != 1.0:
+                    print("The probabilities must add up to 1")
+                    sys.exit(1)
+            if len(self.edges) != len(self.probabilities):
+                print(f"Error: Number of edges does not match number of probabilities for {self.name}.")
+                sys.exit()
+
+            for edge, probability in zip(self.edges, self.probabilities):
+                self.edges_probs[edge] = probability
+    
+    def is_terminal(self):
+        return not self.edges
+    
+    def __repr__(self):
+        return (f"Node({self.name}, Reward={self.reward}, Edges={self.edges}, Probabilities={self.probabilities}, "
+                f"Terminal Node={self.is_terminal()}, Decision Node={self.is_decision_node}, Chance Node={not self.is_decision_node}, "
+                f"Edges Probs={[(a, '%.3f' % round(b, 4)) for a, b in self.edges_probs.items()]})")
+
+class Graph:
+    def __init__(self, df, tol, iter, is_max):
+        self.nodes = {}
+        self.df = df
+        self.tol = tol
+        self.iter = iter
+        self.is_max = is_max
+        self.nodes = {}
+
+    def add_node(self, name):
+        if name not in self.nodes:
+            self.nodes[name] = Node(name)
+        return self.nodes[name]
+
+    def read_input_file(self, file_path):
+        with open(file_path, 'r') as file:
+            for line in file:
+                line = line.strip()
+                if line.startswith('#') or not line:
+                    continue
+
+                if '=' in line:
+                    name, value = line.split('=')
+                    node = self.add_node(name.strip())
+                    node.set_reward(float(value.strip()))
+
+                elif ':' in line:
+                    name, edges_str = line.split(':')
+                    edges = [edge.strip() for edge in edges_str.strip()[1:-1].split(',')]
+                    node = self.add_node(name.strip())
+                    node.set_edges(edges)
+                    for edge in edges:
+                        self.add_node(edge)
+
+                elif '%' in line:
+                    name, probs_str = line.split('%')
+                    probabilities = [float(p.strip()) for p in probs_str.strip().split()]
+                    node = self.add_node(name.strip())
+                    node.set_probabilities(probabilities)
+                
+                else:
+                    print(f"Input line does not follow expected format: {line}")
+                    sys.exit()
+        
+        for name, node in self.nodes.items():
+            node.process_probabilities()
+
+    def __repr__(self):
+        node_summaries = ', '.join([name for name in self.nodes.values()])
+        return (f"Graph(Discount Factor={self.df}, Tolerance={self.tol}, Iterations={self.iter}, "
+                f"Maximize Rewards={self.is_max}, Nodes=[{node_summaries}])")
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Markov Decision Process Solver')
@@ -15,13 +126,12 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-    print(f"Arguments: {args}")
 
-    print(f"Discount Factor: {args.df}")
-    print(f"Maximize Rewards: {args.max}")
-    print(f"Tolerance: {args.tol}")
-    print(f"Iterations: {args.iter}")
-    print(f"Input File: {args.input_file}")
+    graph = Graph(args.df, args.tol, args.iter, args.max)
+    graph.read_input_file(args.input_file)
+
+    for name, node in graph.nodes.items():
+        print(node)
 
 if __name__ == "__main__":
     main()
