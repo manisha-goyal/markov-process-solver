@@ -150,25 +150,15 @@ class MDPSolver:
         self.set_initial_policy()
         print_debug(f"Initial policies: {self.policies}")
         while True:
-            curr_policy = self.policies
+            old_policy = self.policies
             self.value_iteration()
             self.greedy_policy_computation()
-            new_policy = self.policies
-            self.apply_policy()
-            if curr_policy == new_policy:
+            if old_policy == self.policies:
                 break
         print_debug(f"\nFinal values: {self.graph.get_values()}")
         print_debug(f"Optimal policies: {self.get_policies()}")
         
         self.print_solution()
-
-    def apply_policy(self):
-        for name, node in self.graph.nodes.items():
-            if node.is_decision_node:
-                action = self.policies.get(name, None)
-                if action:
-                    for edge in node.edges:
-                        node.edges_probs[edge] = node.success_rate if edge == action else (1 - node.success_rate) / (len(node.edges) - 1)
 
     def value_iteration(self):
         print_debug(f"Value iteration:")
@@ -224,6 +214,12 @@ class MDPSolver:
         print_debug(f"Previous policies: {self.get_policies()}")
         if updated:
             self.policies = new_policy
+            for name, node in self.graph.nodes.items():
+                if node.is_decision_node:
+                    action = self.policies.get(name, None)
+                    if action:
+                        for edge in node.edges:
+                            node.edges_probs[edge] = node.success_rate if edge == action else (1 - node.success_rate) / (len(node.edges) - 1)
         print_debug(f"Current policies: {self.get_policies()}")
 
     def print_solution(self):
@@ -249,7 +245,7 @@ def print_debug(*args, **kwargs):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Markov Decision Process Solver')
     parser.add_argument('-df', nargs='?', type=float, required=False, default=1.0, help='Discount factor [0, 1] for future rewards. Default is 1.0.')
-    parser.add_argument('-max', required=False, action='store_true', help='Maximize rewards. Default to false which minimizes costs.')
+    parser.add_argument('-min', required=False, action='store_true', help='Maximize rewards. Default to false which minimizes costs.')
     parser.add_argument('-tol', nargs='?', default=0.01, type=float, required=False, help='Tolerance for exiting value iteration. Default is 0.01.')
     parser.add_argument('-iter', nargs='?', default=100, type=int, required=False, help='Cutoff for value iteration. Default is 100.')
     parser.add_argument('input_file', type=str, help='Path to the input file.')
@@ -260,5 +256,5 @@ if __name__ == "__main__":
 
     graph = Graph()
     graph.create_graph(args.input_file)
-    solver = MDPSolver(graph, args.df, args.tol, args.iter, args.max)
+    solver = MDPSolver(graph, args.df, args.tol, args.iter, not args.min)
     solver.solve()
