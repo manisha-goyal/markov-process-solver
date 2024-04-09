@@ -224,18 +224,16 @@ class MDPSolver:
 
     def print_solution(self):
         print_debug("\n\nFinal solution: \n")
-        policies = []
-        for src, dest in self.get_policies().items():
-            if len(self.graph.nodes[src].edges) > 1:
-                policies.append(f"{src} -> {dest}")
-
-        for line in sorted(policies):
-            print(line)
+        if self.policies:
+            policies = []
+            for src, dest in self.get_policies().items():
+                if len(self.graph.nodes[src].edges) > 1:
+                    policies.append(f"{src} -> {dest}")
+            print("\n".join(sorted(policies)))
 
         values = []
         for node_name, node in self.graph.nodes.items():
-            values.append(f"{node_name}={node.value:.3f}")
-        
+            values.append(f"{node_name}={node.value:.3f}")    
         print("\n" + " ".join(sorted(values)))
         
 def print_debug(*args, **kwargs):
