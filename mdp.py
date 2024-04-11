@@ -129,7 +129,7 @@ class Graph:
         return f"Graph[{newline}{nodes_repr}{newline}]"
     
 class MDPSolver:
-    def __init__(self, graph, df=1.0, tol=0.01, iter=100, is_max=True):
+    def __init__(self, graph, df=1.0, tol=0.01, iter=100, is_max=False):
         self.graph = graph
         self.df = df
         self.tol = tol
@@ -243,7 +243,7 @@ def print_debug(*args, **kwargs):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Markov Decision Process Solver')
     parser.add_argument('-df', nargs='?', type=float, required=False, default=1.0, help='Discount factor [0, 1] for future rewards. Default is 1.0.')
-    parser.add_argument('-min', required=False, action='store_true', help='Maximize rewards. Default to false which minimizes costs.')
+    parser.add_argument('-max', required=False, action='store_true', help='Maximize rewards. Default to false which minimizes costs.')
     parser.add_argument('-tol', nargs='?', default=0.01, type=float, required=False, help='Tolerance for exiting value iteration. Default is 0.01.')
     parser.add_argument('-iter', nargs='?', default=100, type=int, required=False, help='Cutoff for value iteration. Default is 100.')
     parser.add_argument('input_file', type=str, help='Path to the input file.')
@@ -254,5 +254,5 @@ if __name__ == "__main__":
 
     graph = Graph()
     graph.create_graph(args.input_file)
-    solver = MDPSolver(graph, args.df, args.tol, args.iter, not args.min)
+    solver = MDPSolver(graph, args.df, args.tol, args.iter, not args.max)
     solver.solve()
