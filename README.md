@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project involves the creation of a generic Markov process solver that computes optimal policies and values for given states using value iteration and policy improvement algorithms. The solver supports both maximization of rewards and minimization of costs, and can handle decision nodes with specified success rates, as well as chance nodes with given transition probabilities.
+This Markov Decision Process (MDP) solver is designed to determine optimal policies and value functions for decision-making problems modeled as MDPs. Utilizing both value iteration and policy improvement techniques, it handles decision and chance nodes, accommodating both reward maximization and cost minimization strategies. The solver's has support for configurable discount factors, tolerance levels, and iteration limits, ensuring robust and precise solutions across various scenarios.
 
 ## Features
 
@@ -35,10 +35,19 @@ python mdp_solver.py -df <discount_factor> [-max] [-tol <tolerance>] [-iter <ite
 
 ## Input File Format
 
+The input file should be structured as follows:
+
 - **Node/State Names**: Should be alphanumeric.
 - **Rewards/Costs**: Lines of the form 'name = value', where value is an integer.
 - **Edges**: Of the form 'name : [e1 e2 e3]', where each `e` is the name of an out-edge from `name`.
 - **Probabilities**: For chance nodes, 'name % p1 p2 p3'; for decision nodes, 'name % p', with success rates and failure distribution as described.
+
+Example:
+```
+A = 10
+B : [A, B]
+B % 0.8 0.2
+```
 
 ## Example Usage
 
@@ -52,7 +61,7 @@ The program outputs the optimal policy (for non-chance nodes) and the values of 
 
 ## Implementation Details
 
-he solver implements the algorithm as described, utilizing value iteration to compute state values and greedy policy computation to derive an optimal policy based on the current values. Error handling is included for invalid probability sums and other input inconsistencies.
+The solver implements the algorithm as described, utilizing value iteration to compute state values and greedy policy computation to derive an optimal policy based on the current values. Error handling is included for invalid probability sums and other input inconsistencies.
 
 ### Value Iteration
 
@@ -68,9 +77,14 @@ The solver differentiates between decision nodes and chance nodes, handling them
 
 ## Project Structure
 
-The project is structured around modular components for parsing, conversion, and solving, facilitating clear separation of concerns and extendibility. The core modules include:
-- `main.py`: The entry point of the program, handling command-line arguments and orchestrating the solving process.
-- `markov_solver.py`: Implements the core logic for the Markov process solver, including value iteration and policy computation.
-- `policy_computation.py`: Dedicated to computing the optimal policy based on the current value estimates.
-- `value_iteration.py`: Contains the implementation of the value iteration algorithm for estimating state values.
-- `utils.py`: Provides utility functions for parsing input files and other miscellaneous tasks.
+The project is structured around modular components for parsing, and solving, facilitating clear separation of concerns and extendibility. The core components include:
+
+- **`Node` Class**: Central to defining the states within the Markov Decision Process, it encapsulates each state's rewards, transitions, and probabilities. Critical for establishing the structure upon which policies and values are calculated.
+
+- **`Graph` Class**: Responsible for constructing the MDP's graph representation. It aggregates `Node` instances, forming the MDP's complete state-action graph. This component is key for organizing the MDP's structure and facilitating the subsequent solving process.
+
+- **`MDPSolver` Class**: The driving force behind solving the MDP, employing value iteration and policy improvement algorithms to determine optimal state values and policies. It iteratively refines policies and values, leveraging the graph structure to achieve convergence to optimal solutions.
+
+- **Input Parsing**: Integrated within the `Graph` class, this functionality interprets and transforms input data into a structured graph format. It ensures the accurate representation of the MDP's states, actions, and transitions as defined by the input specifications.
+
+- **Value Iteration and Policy Improvement**: Embedded within the `MDPSolver` class, these algorithms form the core computational mechanisms of the solver. Value iteration updates state values based on the Bellman equation, while policy improvement iteratively refines the policy towards optimality.
