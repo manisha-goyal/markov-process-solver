@@ -42,6 +42,9 @@ class Node:
             sys.exit()
 
         if len(self.edges) == 1:
+            if len(self.probabilities) > 1:
+                print(f"Error: Number of edges does not match number of probabilities for {self.name}.")
+                sys.exit()
             print_debug(f"Setting chance node: {self.name}")
             self.edges_probs[self.edges[0]] = self.probabilities[0] if len(self.probabilities) == 1 else 1.0
         elif len(self.edges) > 1:
@@ -86,37 +89,43 @@ class Graph:
     def create_graph(self, file_path):
         print_debug(f"\n\nParsing input")
         with open(file_path, 'r') as file:
-            for line in file:
-                line = line.strip()
-                if line.startswith('#') or not line:
-                    print_debug(f"{'Empty line' if len(line) == 0 else 'Comment'} - {line}")
-                    continue
+            for line_number, line in enumerate(file, 1):
+                try:
+                    line = line.strip()
+                    if line.startswith('#') or not line:
+                        print_debug(f"{'Empty line' if len(line) == 0 else 'Comment'} - {line}")
+                        continue
 
-                if '=' in line:
-                    print_debug(f"Reward - {line}")
-                    name, value = line.split('=')
-                    node = self.add_node(name.strip())
-                    node.set_reward(float(value.strip()))
+                    if '=' in line:
+                        print_debug(f"Reward - {line}")
+                        name, value = line.split('=')
+                        node = self.add_node(name.strip())
+                        node.set_reward(float(value.strip()))
 
-                elif ':' in line:
-                    print_debug(f"Edges - {line}")
-                    name, edges_str = line.split(':')
-                    edges = [edge.strip() for edge in edges_str.strip()[1:-1].split(',')]
-                    node = self.add_node(name.strip())
-                    node.set_edges(edges)
-                    for edge in edges:
-                        self.add_node(edge)
+                    elif ':' in line:
+                        print_debug(f"Edges - {line}")
+                        name, edges_str = line.split(':')
+                        edges = [edge.strip() for edge in edges_str.strip()[1:-1].split(',')]
+                        node = self.add_node(name.strip())
+                        node.set_edges(edges)
+                        for edge in edges:
+                            self.add_node(edge)
 
-                elif '%' in line:
-                    print_debug(f"Probabilities - {line}")
-                    name, probs_str = line.split('%')
-                    probabilities = [float(p.strip()) for p in probs_str.strip().split()]
-                    node = self.add_node(name.strip())
-                    node.set_probabilities(probabilities)
-                
-                else:
+                    elif '%' in line:
+                        print_debug(f"Probabilities - {line}")
+                        name, probs_str = line.split('%')
+                        probabilities = [float(p.strip()) for p in probs_str.strip().split()]
+                        node = self.add_node(name.strip())
+                        node.set_probabilities(probabilities)
+                    
+                    else:
+                        print_debug(f"Invalid line - {line}")
+                        print(f"Input line does not follow expected format: {line_number}: {line}")
+                        sys.exit()
+
+                except Exception as e:
                     print_debug(f"Invalid line - {line}")
-                    print(f"Input line does not follow expected format: {line}")
+                    print(f"Input line does not follow expected format: {line_number}: {line}")
                     sys.exit()
         
         for name, node in self.nodes.items():
