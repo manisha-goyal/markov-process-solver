@@ -19,6 +19,8 @@ class Node:
     
     def set_edges(self, edges):
         self.edges = edges
+        for edge in self.edges:
+            self.edges_probs[edge] = 0
 
     def set_probabilities(self, probabilities):
         self.probabilities = probabilities
@@ -53,14 +55,14 @@ class Node:
                     sys.exit()
 
                 for edge, probability in zip(self.edges, self.probabilities):
-                    self.edges_probs[edge] = probability
+                    self.edges_probs[edge] += probability
             else:
                 print_debug(f"Setting decision node: {self.name}")
                 success_rate = self.probabilities[0] if len(self.probabilities) == 1 else 1.0
                 failure_rate = (1 - success_rate) / (len(self.edges) - 1) if len(self.probabilities) == 1 else 0
                 self.set_success_rate(success_rate)
                 self.is_decision_node = True
-                for edge in self.edges:
+                for edge in self.edges_probs.keys():
                     self.edges_probs[edge] = success_rate if edge == self.edges[0] else failure_rate
     
     def is_terminal(self):
@@ -148,7 +150,8 @@ class MDPSolver:
     def solve(self):
         print_debug("\n\nMDP Solver")
         self.set_initial_policy()
-        print_debug(f"Initial policies: {self.policies}")
+        if self.policies:
+            print_debug(f"Initial policies: {self.policies}")
         while True:
             old_policy = self.policies
             self.value_iteration()
@@ -156,38 +159,45 @@ class MDPSolver:
             if old_policy == self.policies:
                 break
         print_debug(f"\nFinal values: {self.graph.get_values()}")
-        print_debug(f"Optimal policies: {self.get_policies()}")
+        if self.policies:
+            print_debug(f"Optimal policies: {self.get_policies()}")
         
         self.print_solution()
 
     def value_iteration(self):
         print_debug(f"Value iteration:")
-        old_values = self.graph.get_values()
+        print_debug(f"\nCurrent values: {self.graph.get_values()}")
         for i in range(self.iter):
             max_diff = 0
-            for _, node in self.graph.nodes.items():
+            new_values = {}
+            for name, node in self.graph.nodes.items():
                 if node.is_terminal():
+                    new_values[name] = node.value
                     continue
                 old_value = node.value
                 expected_utility = 0
                 for edge, probability in node.edges_probs.items():
                     expected_utility += probability * self.graph.nodes[edge].value
-                
-                node.value = node.reward + (self.df * expected_utility)
+                new_values[name] = round((node.reward + (self.df * expected_utility)) , 3)
+            for name, node in self.graph.nodes.items():
+                old_value = node.value
+                node.value = new_values[name]
                 max_diff = max(max_diff, abs(old_value - node.value))
-            print_debug(f"Value Iteration: {i}")
-            print_debug(f"Previous values: {old_values}")
-            print_debug(f"Current values: {self.graph.get_values()}")
+            #print_debug(f"Value Iteration: {i}")
+            print_debug(f"{self.graph.get_values()}")
             if max_diff < self.tol:
                 print_debug(f"The values are equal")
                 break
-        print_debug(f"Values: {self.graph.get_values()}")
+        print_debug(f"\nNew values: {self.graph.get_values()}")
 
     def greedy_policy_computation(self):
-        print_debug(f"Greedy policy computation:")
+        if self.policies:
+            print_debug(f"Greedy policy computation:")
+            print_debug(f"\nCurrent policies: {self.get_policies()}")
         updated = False
         new_policy = {} 
         
+
         for name, node in self.graph.nodes.items():
             if node.is_decision_node:
                 print_debug(f"Computing policy for node: {name}")
@@ -198,7 +208,7 @@ class MDPSolver:
                     exp_edge_value = 0
                     for edge, prob in probabilities.items():
                         exp_edge_value += prob * self.graph.nodes[edge].value
-                    utilities[action] = node.reward + (self.df * exp_edge_value)
+                    utilities[action] = round(node.reward + (self.df * exp_edge_value), 3)
                     print_debug(f"\tPolicy: {name} -> {action} has a value of {utilities[action]}")
                 
                 best_action = max(utilities, key=utilities.get) if self.is_max else min(utilities, key=utilities.get)
@@ -210,17 +220,18 @@ class MDPSolver:
                     updated = True
                 else:
                     new_policy[name] = current_action
-        
-        print_debug(f"Previous policies: {self.get_policies()}")
         if updated:
             self.policies = new_policy
             for name, node in self.graph.nodes.items():
                 if node.is_decision_node:
-                    action = self.policies.get(name, None)
-                    if action:
-                        for edge in node.edges:
-                            node.edges_probs[edge] = node.success_rate if edge == action else (1 - node.success_rate) / (len(node.edges) - 1)
-        print_debug(f"Current policies: {self.get_policies()}")
+                    for edge in node.edges:
+                        action = self.policies.get(name, None)
+                        if edge == action:
+                            node.edges_probs[edge] = node.success_rate
+                        else:
+                            node.edges_probs[edge] = (1 - node.success_rate) / (len(node.edges) - 1)
+        if self.policies:
+            print_debug(f"\nNew policies: {self.get_policies()}")
 
     def print_solution(self):
         print_debug("\n\nFinal solution: \n")
@@ -254,5 +265,5 @@ if __name__ == "__main__":
 
     graph = Graph()
     graph.create_graph(args.input_file)
-    solver = MDPSolver(graph, args.df, args.tol, args.iter, not args.max)
+    solver = MDPSolver(graph, args.df, args.tol, args.iter, args.max)
     solver.solve()
