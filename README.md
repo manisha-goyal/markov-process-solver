@@ -63,17 +63,11 @@ The program outputs the optimal policy (for non-chance nodes) and the values of 
 
 The solver implements the algorithm as described, utilizing value iteration to compute state values and greedy policy computation to derive an optimal policy based on the current values. Error handling is included for invalid probability sums and other input inconsistencies.
 
-### Value Iteration
+- **Value Iteration**: Iteratively updates state values based on the Bellman equation, considering the specified discount factor and the transition probabilities derived from the current policy.
 
-Iteratively updates state values based on the Bellman equation, considering the specified discount factor and the transition probabilities derived from the current policy.
+- **Greedy Policy Computation**: Derives a new policy by selecting actions that maximize rewards (or minimize costs) based on the current state values.
 
-### Greedy Policy Computation
-
-Derives a new policy by selecting actions that maximize rewards (or minimize costs) based on the current state values.
-
-### Handling Different Node Types
-
-The solver differentiates between decision nodes and chance nodes, handling them appropriately according to the input file descriptions.
+- **Handling Different Node Types**: The solver differentiates between decision nodes and chance nodes, handling them appropriately according to the input file descriptions.
 
 ## Project Structure
 
