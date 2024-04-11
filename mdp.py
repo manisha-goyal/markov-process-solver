@@ -62,8 +62,8 @@ class Node:
                 failure_rate = (1 - success_rate) / (len(self.edges) - 1) if len(self.probabilities) == 1 else 0
                 self.set_success_rate(success_rate)
                 self.is_decision_node = True
-                for edge in self.edges_probs.keys():
-                    self.edges_probs[edge] = success_rate if edge == self.edges[0] else failure_rate
+                for edge in self.edges:
+                    self.edges_probs[edge] += success_rate if edge == self.edges[0] else failure_rate
     
     def is_terminal(self):
         return not self.edges
@@ -224,12 +224,10 @@ class MDPSolver:
             self.policies = new_policy
             for name, node in self.graph.nodes.items():
                 if node.is_decision_node:
+                    node.edges_probs = {edge: 0 for edge in node.edges}
                     for edge in node.edges:
                         action = self.policies.get(name, None)
-                        if edge == action:
-                            node.edges_probs[edge] = node.success_rate
-                        else:
-                            node.edges_probs[edge] = (1 - node.success_rate) / (len(node.edges) - 1)
+                        node.edges_probs[edge] += node.success_rate if edge == action else (1 - node.success_rate) / (len(node.edges) - 1)
         if self.policies:
             print_debug(f"\nNew policies: {self.get_policies()}")
 
